@@ -1,19 +1,27 @@
-INCLUDE = -I"D:\Documents\Development\SDL2\SDL2-2.0.4\i686-w64-mingw32\include"
-LIB = -L"D:\Documents\Development\SDL2\SDL2-2.0.4\i686-w64-mingw32\lib"
+INC_DIR = -I"D:\Documents\Development\SDL2\SDL2-2.0.4\i686-w64-mingw32\include"
+LIB_DIR = -L"D:\Documents\Development\SDL2\SDL2-2.0.4\i686-w64-mingw32\lib"
+
+SRC=./src
+BIN=./bin
+OBJ=./obj
+LIB=./lib
 EXE = render.exe
 
 CXX = g++
-CXXFLAGS = -Wall -c -std=c++11 $(INCLUDE)
-LDFLAGS = -mwindows -mconsole $(LIB) -lmingw32 -lSDL2main -lSDL2
+CXXFLAGS = -Wall -c -std=c++11 $(INC_DIR)
+LDFLAGS = -mwindows -mconsole $(LIB_DIR) -lmingw32 -lSDL2main -lSDL2
 
-all: $(EXE)
+all: $(BIN)/$(EXE) $(BIN)/SDL2.dll
 
-$(EXE): main.o
+$(BIN)/SDL2.dll: SDL2.dll
+	cp SDL2.dll $(BIN)
+
+$(BIN)/$(EXE): $(OBJ)/main.o
 	$(CXX) $< $(LDFLAGS) -o $@
 
-main.o: src/main.cc
+$(OBJ)/main.o: $(SRC)/main.cc
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 clean:
-	rm *.o && rm $(EXE)
-	
+	rm -rf $(BIN) $(LIB) $(OBJ)
+	mkdir -p $(BIN) $(LIB) $(OBJ)
