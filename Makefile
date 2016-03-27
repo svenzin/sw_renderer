@@ -8,7 +8,7 @@ LIB=./lib
 EXE = render.exe
 
 CXX = g++
-CXXFLAGS = -Wall -c -std=c++11 $(INC_DIR)
+CXXFLAGS = -Wall -c -std=c++11 $(INC_DIR) -O3 -ffast-math
 LDFLAGS = -mwindows -mconsole $(LIB_DIR) -lmingw32 -lSDL2main -lSDL2
 
 all: $(BIN)/$(EXE) $(BIN)/SDL2.dll
