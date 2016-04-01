@@ -18,20 +18,30 @@ Uint32 RGB(float r, float g, float b) {
 }
 
 const int FPS = 33;
+const int WIDTH = 320 * 1;
+const int HEIGHT = 180 * 1;
+const int SCALE = 4;
+
 int main(int argc, char** argv) {
+	const int FULL_WIDTH = SCALE * WIDTH;
+	const int FULL_HEIGHT = SCALE * HEIGHT;
+
 	if (SDL_Init(SDL_INIT_EVERYTHING/*SDL_INIT_VIDEO*/) != 0) {
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
 		return 1;
 	}
 
-	SDL_Window * win = SDL_CreateWindow("Software Renderer", 100, 100, 1280, 720, SDL_WINDOW_SHOWN);
+	SDL_Window * win = SDL_CreateWindow("Software Renderer",
+	                                    SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+										FULL_WIDTH, FULL_HEIGHT,
+										SDL_WINDOW_SHOWN);
 	if (win == nullptr){
 		std::cout << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
 		SDL_Quit();
 		return 1;
 	}
 
-	SDL_Renderer *ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED);
+	SDL_Renderer *ren = SDL_CreateRenderer(win, -1, 0);
 	if (ren == nullptr){
 		SDL_DestroyWindow(win);
 		std::cout << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
@@ -39,10 +49,13 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+	SDL_RenderSetLogicalSize(ren, WIDTH, HEIGHT);
+
 	SDL_Texture * tex = SDL_CreateTexture(ren,
 	                                      SDL_PIXELFORMAT_RGBA8888,
 										  SDL_TEXTUREACCESS_STREAMING,
-										  1280, 720);
+										  WIDTH, HEIGHT);
 	if (tex == nullptr){
 		SDL_DestroyTexture(tex);
 		std::cout << "SDL_CreateTexture Error: " << SDL_GetError() << std::endl;
@@ -50,7 +63,7 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	Uint32 * pixels = new Uint32[1280*720];
+	Uint32 * pixels = new Uint32[WIDTH*HEIGHT];
 
 	Uint32 t0 = SDL_GetTicks();
 	Uint32 t1 = t0;
@@ -60,14 +73,14 @@ int main(int argc, char** argv) {
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {}
 
-		for (int i = 0; i < 1280; ++i) {
-			for (int j = 0; j < 720; ++j) {
-				const float u = (i % 1280) / 1280.0f;
-				const float v = ((j + t) % 720) / 720.0f;
-				pixels[1280 * j + i] = RGB(u, 1.0f - u, v);
+		for (int i = 0; i < WIDTH; ++i) {
+			for (int j = 0; j < HEIGHT; ++j) {
+				const float u = (i % WIDTH) / float(WIDTH);
+				const float v = ((j + t) % HEIGHT) / float(HEIGHT);
+				pixels[WIDTH * j + i] = RGB(u, 1.0f - u, v);
 			}
 		}
-		SDL_UpdateTexture(tex, NULL, pixels, 1280 * sizeof(Uint32));
+		SDL_UpdateTexture(tex, NULL, pixels, WIDTH * sizeof(Uint32));
 
 		SDL_RenderCopy(ren, tex, NULL, NULL);
 		SDL_RenderPresent(ren);
