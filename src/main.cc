@@ -177,6 +177,12 @@ struct Rasterizer {
 			(this->*pt)(int(v.x), int(v.y)) = color;
 		}
 	}
+
+	void wireframe(Vec2D u, Vec2D v, Vec2D w, Uint32 color) {
+		line(u, v, color);
+		line(v, w, color);
+		line(w, u, color);
+	}
 };
 
 int t = 1;
@@ -198,6 +204,7 @@ void update(Frame & pixels) {
 
 	Rasterizer r { pixels };
 	Uint32 white = RGB(1.0f, 1.0f, 1.0f);
+	Uint32 black = RGB(0.0f, 0.0f, 0.0f);
 
 	r.line({20.1, 20.1}, {20.1, 20.1}, white);
 	r.line({40, 20}, {50, 20}, white);
@@ -227,4 +234,7 @@ void update(Frame & pixels) {
 	r.line({1, 31 + d}, {10, 32 + d}, white);
 	r.line({21 + d, 31}, {22 + d, 40}, white);
 	r.line({1 + d, 41}, {10 + d, 42}, white);
+
+	r.wireframe({200+d, 50}, {280+d, 20}, {250+d, 150}, white);
+	r.wireframe({200, 100+d}, {200, 100+d}, {200, 100+d}, white);
 }
