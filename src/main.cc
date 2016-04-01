@@ -39,12 +39,32 @@ struct Frame {
 	}
 };
 
+void load();
 void update(Frame & pixels);
 
 const int FPS = 33;
 const int WIDTH = 320 * 1;
 const int HEIGHT = 180 * 1;
 const int SCALE = 4;
+
+class Key {
+	static Uint8 _old[SDL_NUM_SCANCODES];
+	static Uint8 _new[SDL_NUM_SCANCODES];
+
+public:
+	static void update() {
+		std::swap(_old, _new);
+		SDL_PumpEvents();
+		int nKeys;
+		auto kb = SDL_GetKeyboardState(&nKeys);
+		for (int i = 0; i < nKeys; ++i) { _new[i] = (kb[i] != 0); }
+	}
+	static bool isDown   (SDL_Scancode key) { return _new[key]; }
+	static bool isUp     (SDL_Scancode key) { return !isDown(key); }
+	static bool isPressed(SDL_Scancode key) { return (!_old[key] && _new[key]); }
+};
+Uint8 Key::_old[SDL_NUM_SCANCODES];
+Uint8 Key::_new[SDL_NUM_SCANCODES];
 
 int main(int argc, char** argv) {
 	const int FULL_WIDTH = SCALE * WIDTH;
@@ -96,9 +116,13 @@ int main(int argc, char** argv) {
 
 	bool quit = false;
 	while (!quit) {
+		Key::update();
 
 		SDL_Event event;
-		while (SDL_PollEvent(&event)) { if (event.type == SDL_QUIT) quit = true; }
+		while (SDL_PollEvent(&event)) {
+			if (event.type == SDL_QUIT) quit = true;
+			if ((event.type == SDL_KEYDOWN) && (event.key.keysym.sym == SDLK_ESCAPE)) quit = true;
+		}
 
 		update(pixels);
 
