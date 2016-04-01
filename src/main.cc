@@ -243,8 +243,11 @@ void load() {
 }
 
 int t = 1;
+float rcz = 0.0f;
 float rlz = 0.0f;
 void update(Frame & pixels) {
+	if (Key::isDown(SDL_SCANCODE_A)) rcz -= 0.1f;
+	if (Key::isDown(SDL_SCANCODE_D)) rcz += 0.1f;
 	if (Key::isDown(SDL_SCANCODE_J)) rlz -= 0.1f;
 	if (Key::isDown(SDL_SCANCODE_L)) rlz += 0.1f;
 
@@ -306,7 +309,7 @@ void update(Frame & pixels) {
 		r.wireframe({10+d, 140}, {30+d, 50}, {60+d, 160}, black);
 	}
 
-	auto camera = Vec3D { 0.0f, 0.0f, 1.0f }.normalized();
+	auto camera = Vec3D { cos(rcz), 0.0f, sin(rcz) }.normalized();
 	Vec3D light = Vec3D { cos(rlz), 1.0f, sin(rlz) }.normalized();
 	for (auto t : m.faces) {
 		Vec3D v3[3];
