@@ -11,7 +11,13 @@ CXX = g++
 CXXFLAGS = -Wall -c -std=c++11 $(INC_DIR) -O0 -ffast-math -g
 LDFLAGS = -mwindows -mconsole $(LIB_DIR) -lmingw32 -lSDL2main -lSDL2
 
-all: $(BIN)/$(EXE) $(BIN)/SDL2.dll
+exe: $(BIN)/$(EXE) $(BIN)/SDL2.dll
+
+tests: $(BIN)/Test_Model.exe
+
+all: exe tests
+
+# Executable
 
 $(BIN)/SDL2.dll: SDL2.dll
 	cp SDL2.dll $(BIN)
@@ -19,7 +25,15 @@ $(BIN)/SDL2.dll: SDL2.dll
 $(BIN)/$(EXE): $(OBJ)/main.o
 	$(CXX) $< $(LDFLAGS) -o $@
 
-$(OBJ)/main.o: $(SRC)/main.cc $(SRC)/Vec2D.hh
+$(OBJ)/main.o: $(SRC)/main.cc $(SRC)/Model.hh $(SRC)/Vec3D.hh $(SRC)/Vec2D.hh
+	$(CXX) $(CXXFLAGS) $< -o $@
+
+# Tests
+
+$(BIN)/Test_Model.exe: $(OBJ)/Test_Model.o
+	$(CXX) $< $(LDFLAGS) -o $@
+
+$(OBJ)/Test_Model.o: $(SRC)/test/Test_Model.cc
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 clean:
