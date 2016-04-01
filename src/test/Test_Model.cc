@@ -34,6 +34,7 @@ bool Test_Ground() {
 	auto m = Model::OBJ(obj);
 
 	CHECK(equal(4, m.vertices.size()));
+	CHECK(equal(2, m.faces.size()));
 
 	return true;
 }
