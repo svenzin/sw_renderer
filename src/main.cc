@@ -17,6 +17,7 @@ Uint32 RGB(float r, float g, float b) {
 	return RGB(Uint8(255*r), Uint8(255*g), Uint8(255*b));
 }
 
+const int FPS = 33;
 int main(int argc, char** argv) {
 	if (SDL_Init(SDL_INIT_EVERYTHING/*SDL_INIT_VIDEO*/) != 0) {
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
@@ -71,9 +72,9 @@ int main(int argc, char** argv) {
 		SDL_RenderCopy(ren, tex, NULL, NULL);
 		SDL_RenderPresent(ren);
 
-//		SDL_Delay(10);
-
 		t0 = t1;
+		Uint32 delay = SDL_GetTicks() - t0;
+		if (delay < FPS) SDL_Delay(FPS - delay);
 		t1 = SDL_GetTicks();
 		std::cout << 1000.0 / (t1 - t0) << std::endl;
 		t++;
