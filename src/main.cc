@@ -300,7 +300,8 @@ void update(Frame & pixels) {
 		r.wireframe({10+d, 140}, {30+d, 50}, {60+d, 160}, black);
 	}
 
-	Vec3D camera = Vec3D { 0.0f, 0.0f, 1.0f };
+	auto camera = Vec3D { 0.0f, 0.0f, 1.0f };
+	auto light = Vec3D { 1.0f, 1.0f, 1.0f }.normalized();
 	for (auto t : m.faces) {
 		Vec3D v3[3];
 		Vec2D v2[3];
@@ -310,7 +311,7 @@ void update(Frame & pixels) {
 			v2[i].y = int(-ZOOM * v3[i].y) + HEIGHT / 2;
 		}
 
-		const float c = clamp(camera * m.normal(t).normalized(), 0.0f, 1.0f);
+		const float c = clamp(light * m.normal(t).normalized(), 0.0f, 1.0f);
 		if ((camera * m.normal(t).normalized()) >= 0.0f) {
 			r.triangle(v2[0], v2[1], v2[2], RGB(c, c, c));
 		}
