@@ -183,6 +183,52 @@ struct Rasterizer {
 		line(v, w, color);
 		line(w, u, color);
 	}
+
+	void triangle(Vec2D u, Vec2D v, Vec2D w, Uint32 color) {
+		if (u.y > v.y) std::swap(u, v);
+		if (u.y > w.y) std::swap(u, w);
+		if (v.y > w.y) std::swap(v, w);
+
+		const int uy = int(u.y);
+		const int vy = int(v.y);
+		const int wy = int(w.y);
+
+		if (uy == vy) {
+			const int xmin = std::min(int(u.x), int(v.x));
+			const int xmax = std::max(int(u.x), int(v.x));
+			for (int x = xmin; x <= xmax; ++x) {
+				pixels.at(x, uy) = color;
+			}
+		} else {
+			const float duv = (v.x - u.x) / (v.y - u.y);
+			const float duw = (w.x - u.x) / (w.y - u.y);
+			for (int y = uy; y < vy; ++y) {
+				const int xv = int(u.x + (y - u.y) * duv);
+				const int xw = int(u.x + (y - u.y) * duw);
+				for (int x = std::min(xv, xw); x <= std::max(xv, xw); ++x) {
+					pixels.at(x, y) = color;
+				}
+			}
+		}
+
+		if (vy == wy) {
+			const int xmin = std::min(int(v.x), int(w.x));
+			const int xmax = std::max(int(v.x), int(w.x));
+			for (int x = xmin; x <= xmax; ++x) {
+				pixels.at(x, vy) = color;
+			}
+		} else {
+			const float duw = (w.x - u.x) / (w.y - u.y);
+			const float dvw = (w.x - v.x) / (w.y - v.y);
+			for (int y = vy; y <= wy; ++y) {
+				const int xv = int(v.x + (y - v.y) * dvw);
+				const int xw = int(u.x + (y - u.y) * duw);
+				for (int x = std::min(xv, xw); x <= std::max(xv, xw); ++x) {
+					pixels.at(x, y) = color;
+				}
+			}
+		}
+	}
 };
 
 int t = 1;
@@ -237,4 +283,9 @@ void update(Frame & pixels) {
 
 	r.wireframe({200+d, 50}, {280+d, 20}, {250+d, 150}, white);
 	r.wireframe({200, 100+d}, {200, 100+d}, {200, 100+d}, white);
+
+	r.triangle({10+d, 140}, {30+d, 50}, {60+d, 160}, white);
+	if ((t/FPS)%2) {
+		r.wireframe({10+d, 140}, {30+d, 50}, {60+d, 160}, black);
+	}
 }
