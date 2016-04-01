@@ -311,7 +311,9 @@ void update(Frame & pixels) {
 		}
 
 		const float c = clamp(camera * m.normal(t).normalized(), 0.0f, 1.0f);
-		r.triangle(v2[0], v2[1], v2[2], RGB(c, c, c));
+		if ((camera * m.normal(t).normalized()) >= 0.0f) {
+			r.triangle(v2[0], v2[1], v2[2], RGB(c, c, c));
+		}
 	}
 	if ((t/FPS)%2) {
 		for (auto t : m.faces) {
@@ -323,7 +325,9 @@ void update(Frame & pixels) {
 				v2[i].y = int(-ZOOM * v3[i].y) + HEIGHT / 2;
 			}
 
-			r.wireframe(v2[0], v2[1], v2[2], black);
+			if ((camera * m.normal(t).normalized()) >= 0.0f) {
+				r.wireframe(v2[0], v2[1], v2[2], black);
+			}
 		}
 	}
 }
