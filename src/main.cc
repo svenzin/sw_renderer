@@ -2,6 +2,8 @@
 #include <SDL2/SDL.h>
 
 #include <Vec2D.hh>
+#include <Vec3D.hh>
+#include <Model.hh>
 
 Uint32 RGBA(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
 	return (Uint32(r) << 24) + (Uint32(g) << 16) + (Uint32(b) << 8) + Uint32(a);
@@ -48,6 +50,7 @@ const int FPS = 33;
 const int WIDTH = 320 * 1;
 const int HEIGHT = 180 * 1;
 const int SCALE = 4;
+const float ZOOM = 0.5f * HEIGHT;
 
 class Key {
 	static Uint8 _old[SDL_NUM_SCANCODES];
@@ -114,7 +117,7 @@ int main(int argc, char** argv) {
 	Uint32 t0 = SDL_GetTicks();
 	Uint32 t1 = t0;
 
-	int t = 0;
+	load();
 
 	bool quit = false;
 	while (!quit) {
@@ -231,6 +234,12 @@ struct Rasterizer {
 	}
 };
 
+Model m;
+void load() {
+	m = Model::OBJ("D:\\Documents\\Development\\workspace\\sw_renderer\\assets\\floor.obj");
+	m = Model::OBJ("D:\\Documents\\Development\\workspace\\sw_renderer\\assets\\african_head\\african_head.obj");
+}
+
 int t = 1;
 void update(Frame & pixels) {
 	const int w = pixels._width;
@@ -287,5 +296,29 @@ void update(Frame & pixels) {
 	r.triangle({10+d, 140}, {30+d, 50}, {60+d, 160}, white);
 	if ((t/FPS)%2) {
 		r.wireframe({10+d, 140}, {30+d, 50}, {60+d, 160}, black);
+	}
+
+	for (auto t : m.faces) {
+		Vec3D v3[3];
+		Vec2D v2[3];
+		for (int i = 0; i < 3; ++i) {
+			v3[i] = m.vertices[t.vertices[i]];
+			v2[i].x = int(ZOOM * v3[i].x) + WIDTH / 2;
+			v2[i].y = int(-ZOOM * v3[i].y) + HEIGHT / 2;
+		}
+		r.triangle(v2[0], v2[1], v2[2], white);
+	}
+	if ((t/FPS)%2) {
+		for (auto t : m.faces) {
+			Vec3D v3[3];
+			Vec2D v2[3];
+			for (int i = 0; i < 3; ++i) {
+				v3[i] = m.vertices[t.vertices[i]];
+				v2[i].x = int(ZOOM * v3[i].x) + WIDTH / 2;
+				v2[i].y = int(-ZOOM * v3[i].y) + HEIGHT / 2;
+			}
+
+			r.wireframe(v2[0], v2[1], v2[2], black);
+		}
 	}
 }
