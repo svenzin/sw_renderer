@@ -17,6 +17,30 @@ Uint32 RGB(float r, float g, float b) {
 	return RGB(Uint8(255*r), Uint8(255*g), Uint8(255*b));
 }
 
+#include <vector>
+struct Frame {
+	explicit Frame(int w, int h)
+	: _width(w),
+	  _height(h),
+	  _data(w*h, RGB(0.0f, 0.0f, 0.0f))
+	{}
+	virtual ~Frame() {}
+	const int _width;
+	const int _height;
+	std::vector<Uint32> _data;
+	Uint32 _dummy;
+	Uint32 & at(int x, int y) {
+		if ((x >= 0) && (x < _width)) {
+			if ((y >= 0) && (y < _height)) {
+				return _data[_width * y + x];
+			}
+		}
+		return _dummy;//_data.at(-1);
+	}
+};
+
+void update(Frame & pixels);
+
 const int FPS = 33;
 const int WIDTH = 320 * 1;
 const int HEIGHT = 180 * 1;
@@ -63,7 +87,7 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	Uint32 * pixels = new Uint32[WIDTH*HEIGHT];
+	Frame pixels(WIDTH, HEIGHT);
 
 	Uint32 t0 = SDL_GetTicks();
 	Uint32 t1 = t0;
@@ -76,14 +100,9 @@ int main(int argc, char** argv) {
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) { if (event.type == SDL_QUIT) quit = true; }
 
-		for (int i = 0; i < WIDTH; ++i) {
-			for (int j = 0; j < HEIGHT; ++j) {
-				const float u = (i % WIDTH) / float(WIDTH);
-				const float v = ((j + t) % HEIGHT) / float(HEIGHT);
-				pixels[WIDTH * j + i] = RGB(u, 1.0f - u, v);
-			}
-		}
-		SDL_UpdateTexture(tex, NULL, pixels, WIDTH * sizeof(Uint32));
+		update(pixels);
+
+		SDL_UpdateTexture(tex, NULL, pixels._data.data(), pixels._width * sizeof(Uint32));
 
 		SDL_RenderCopy(ren, tex, NULL, NULL);
 		SDL_RenderPresent(ren);
@@ -93,14 +112,30 @@ int main(int argc, char** argv) {
 		if (delay < FPS) SDL_Delay(FPS - delay);
 		t1 = SDL_GetTicks();
 		std::cout << 1000.0 / (t1 - t0) << std::endl;
-		t++;
 	}
 
-	delete[] pixels;
 	SDL_DestroyTexture(tex);
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow(win);
 	SDL_Quit();
 
 	return 0;
+}
+
+int t = 1;
+void update(Frame & pixels) {
+	const int w = pixels._width;
+	const int h = pixels._height;
+
+	bool gradient = true;
+	if (gradient) {
+		for (int i = 0; i < w; ++i) {
+			for (int j = 0; j < h; ++j) {
+				const float u = i / float(w);
+				const float v = (j + t) / float(h);
+				pixels.at(i, j) = RGB(u, 1.0f - u, v);
+			}
+		}
+	}
+	++t;
 }
