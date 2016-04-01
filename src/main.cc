@@ -1,6 +1,8 @@
 #include <iostream>
 #include <SDL2/SDL.h>
 
+#include <Vec2D.hh>
+
 Uint32 RGBA(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
 	return (Uint32(r) << 24) + (Uint32(g) << 16) + (Uint32(b) << 8) + Uint32(a);
 }
@@ -146,6 +148,37 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
+struct Rasterizer {
+	Frame & pixels;
+
+	Uint32 & xy(int x, int y) { return pixels.at(x, y); }
+	Uint32 & yx(int x, int y) { return pixels.at(y, x); }
+
+	void point(Vec2D p, Uint32 color) {
+		xy(p.x, p.y) = color;
+	}
+
+	void line(Vec2D u, Vec2D v, Uint32 color) {
+		const Vec2D d = v - u;
+		auto pt = Rasterizer::xy;
+		if (abs(d.x) < abs(d.y)) {
+			u = u.transpose();
+			v = v.transpose();
+			pt = Rasterizer::yx;
+		}
+
+		if (u.x > v.x) std::swap(u, v);
+		(this->*pt)(int(u.x), int(u.y)) = color;
+		if (int(v.x) > int(u.x)) {
+			const float d = (v.y - u.y) / (v.x - u.x);
+			for (int x = int(u.x) + 1; x < int(v.x); ++x) {
+				(this->*pt)(x, int(u.y + (x - u.x) * d)) = color;
+			}
+			(this->*pt)(int(v.x), int(v.y)) = color;
+		}
+	}
+};
+
 int t = 1;
 void update(Frame & pixels) {
 	const int w = pixels._width;
@@ -162,4 +195,36 @@ void update(Frame & pixels) {
 		}
 	}
 	++t;
+
+	Rasterizer r { pixels };
+	Uint32 white = RGB(1.0f, 1.0f, 1.0f);
+
+	r.line({20.1, 20.1}, {20.1, 20.1}, white);
+	r.line({40, 20}, {50, 20}, white);
+	r.line({60, 20}, {60, 10}, white);
+	r.line({80, 20}, {70, 20}, white);
+	r.line({100, 20}, {100, 30}, white);
+	r.line({40, 40}, {50, 50}, white);
+	r.line({60, 40}, {70, 30}, white);
+	r.line({80, 40}, {70, 50}, white);
+	r.line({100, 40}, {90, 30}, white);
+	r.line({40, 60}, {50, 55}, white);
+	r.line({60, 60}, {70, 65}, white);
+	r.line({80, 60}, {85, 70}, white);
+	r.line({100, 60}, {95, 70}, white);
+	r.line({120, 60}, {110, 65}, white);
+	r.line({140, 60}, {130, 55}, white);
+	r.line({160, 60}, {155, 50}, white);
+	r.line({180, 60}, {185, 50}, white);
+
+	r.line({100, 100}, {120, 110}, white);
+	r.line({120, 110}, {100, 100}, white);
+
+	auto d = 0.01*(t%100);
+	r.line({1, 1}, {10, 2}, white);
+	r.line({1, 11.5}, {10, 12.5}, white);
+	r.line({1, 21.99}, {10, 22.99}, white);
+	r.line({1, 31 + d}, {10, 32 + d}, white);
+	r.line({21 + d, 31}, {22 + d, 40}, white);
+	r.line({1 + d, 41}, {10 + d, 42}, white);
 }
