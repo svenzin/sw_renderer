@@ -5,6 +5,8 @@
 #include <Vec3D.hh>
 #include <Model.hh>
 
+float clamp(float f, float min, float max) { return std::min(std::max(f, min), max); }
+
 Uint32 RGBA(Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
 	return (Uint32(r) << 24) + (Uint32(g) << 16) + (Uint32(b) << 8) + Uint32(a);
 }
@@ -298,6 +300,7 @@ void update(Frame & pixels) {
 		r.wireframe({10+d, 140}, {30+d, 50}, {60+d, 160}, black);
 	}
 
+	Vec3D camera = Vec3D { 0.0f, 0.0f, 1.0f };
 	for (auto t : m.faces) {
 		Vec3D v3[3];
 		Vec2D v2[3];
@@ -306,7 +309,9 @@ void update(Frame & pixels) {
 			v2[i].x = int(ZOOM * v3[i].x) + WIDTH / 2;
 			v2[i].y = int(-ZOOM * v3[i].y) + HEIGHT / 2;
 		}
-		r.triangle(v2[0], v2[1], v2[2], white);
+
+		const float c = clamp(camera * m.normal(t).normalized(), 0.0f, 1.0f);
+		r.triangle(v2[0], v2[1], v2[2], RGB(c, c, c));
 	}
 	if ((t/FPS)%2) {
 		for (auto t : m.faces) {

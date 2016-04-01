@@ -16,6 +16,12 @@ struct Model {
 	std::vector<Vec3D> vertices;
 	std::vector<Triangle> faces;
 
+	Vec3D normal(const Triangle & t) const {
+		Vec3D u = vertices[t.vertices[1]] - vertices[t.vertices[0]];
+		Vec3D v = vertices[t.vertices[2]] - vertices[t.vertices[0]];
+		return u ^ v;
+	}
+
 	static Model OBJ(const std::string & filename);
 	static Model OBJ(std::istream & input);
 };
