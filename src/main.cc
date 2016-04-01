@@ -69,9 +69,12 @@ int main(int argc, char** argv) {
 	Uint32 t1 = t0;
 
 	int t = 0;
-	while (true) {
+
+	bool quit = false;
+	while (!quit) {
+
 		SDL_Event event;
-		while (SDL_PollEvent(&event)) {}
+		while (SDL_PollEvent(&event)) { if (event.type == SDL_QUIT) quit = true; }
 
 		for (int i = 0; i < WIDTH; ++i) {
 			for (int j = 0; j < HEIGHT; ++j) {
