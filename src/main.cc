@@ -261,7 +261,9 @@ void update(Frame & pixels) {
 			}
 		}
 	}
-	++t;
+	if (Key::isPressed(SDL_SCANCODE_SPACE)) {
+		t += FPS;
+	}
 
 	Rasterizer r { pixels };
 	Uint32 white = RGB(1.0f, 1.0f, 1.0f);
