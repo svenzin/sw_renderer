@@ -63,9 +63,9 @@ void load();
 void update(Frame & pixels);
 
 const int FPS = 33;
-const int WIDTH = 320 * 2;
-const int HEIGHT = 180 * 2;
-const int SCALE = 2;
+const int WIDTH = 320 * 4;
+const int HEIGHT = 180 * 4;
+const int SCALE = 1;
 const float ZOOM = 0.5f * HEIGHT;
 
 class Key {
@@ -205,18 +205,18 @@ struct Rasterizer {
 
 	void hline(Vec3D u, Vec3D v, Uint32 color) {
 		if (v.x < u.x) std::swap(u, v);
-		float y = int(u.y);
+		int y = int(u.y);
 		float dz = (u.x == v.x) ? 0.0f : (v.z - u.z) / (v.x - u.x);
 
 		float zmin = u.z, zmax = v.z;
 		if (zmin > zmax) std::swap(zmin, zmax);
 		for (int x = int(u.x); x <= int(v.x); ++x) {
-//			float z = u.z + (x - u.x) * dz;
-			float z = u.z + (clamp(x, u.x, v.x) - u.x) * dz, zmin, zmax;
+			const float xx = clamp(x, u.x, v.x);
+			float z = u.z + (xx - u.x) * dz;
 			if (z > pixels.z(x, y)) {
 				pixels.z(x, y) = z;
 				pixels.at(x, y) = color;
-//				Uint8 _ = Uint8(clamp(z + 128.0f, 10.0f, 250.0f));
+				Uint8 _ = Uint8(clamp(z + 128.0f, 10.0f, 250.0f));
 //				pixels.at(x, y) = RGB(_, _, _);
 			}
 		}
@@ -230,38 +230,34 @@ struct Rasterizer {
 		const int vy = int(v.y);
 		const int wy = int(w.y);
 
+		const Vec3D uv = v - u;
+		const Vec3D uw = w - u;
+		const Vec3D vw = w - v;
+
+		const Vec3D duv = uv / uv.y;
+		const Vec3D duw = uw / uw.y;
+		const Vec3D dvw = vw / vw.y;
+
 		if (uy == vy) {
 			hline(u, v, color);
 		} else {
-			const float duv = (v.x - u.x) / (v.y - u.y);
-			const float duw = (w.x - u.x) / (w.y - u.y);
-			const float zuv = (v.z - u.z) / (v.y - u.y);
-			const float zuw = (w.z - u.z) / (w.y - u.y);
 			for (int y = uy; y < vy; ++y) {
 				const float yy = clamp(y, u.y, v.y);
-				const float xv = u.x + (yy - u.y) * duv;
-				const float xw = u.x + (yy - u.y) * duw;
-				const float zv = u.z + (yy - u.y) * zuv;
-				const float zw = u.z + (yy - u.y) * zuw;
-				hline({ xv, y, zv }, { xw, y, zw }, color);
+				const Vec3D vv = u + (yy - u.y) * duv;
+				const Vec3D ww = u + (yy - u.y) * duw;
+				hline({ vv.x, y, vv.z }, { ww.x, y, ww.z }, color);
 			}
 		}
 
 		if (vy == wy) {
 			hline(v, w, color);
 		} else {
-			const float duw = (w.x - u.x) / (w.y - u.y);
-			const float dvw = (w.x - v.x) / (w.y - v.y);
-			const float zuw = (w.z - u.z) / (w.y - u.y);
-			const float zvw = (w.z - v.z) / (w.y - v.y);
 			for (int y = vy; y <= wy; ++y) {
 				const float yu = clamp(y, u.y, w.y);
 				const float yv = clamp(y, v.y, w.y);
-				const float xv = v.x + (yv - v.y) * dvw;
-				const float xw = u.x + (yu - u.y) * duw;
-				const float zv = v.z + (yv - v.y) * zvw;
-				const float zw = u.z + (yu - u.y) * zuw;
-				hline({ xv, y, zv }, { xw, y, zw }, color);
+				const Vec3D vv = v + (yv - v.y) * dvw;
+				const Vec3D ww = u + (yu - u.y) * duw;
+				hline({ vv.x, y, vv.z }, { ww.x, y, ww.z }, color);
 			}
 		}
 	}

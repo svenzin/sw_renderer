@@ -20,6 +20,9 @@ struct Vec3D {
 	Vec3D normalized() const { return (*this) / norm(); }
 };
 
+Vec3D operator + (const Vec3D & u, const Vec3D & v) {
+	return { u.x + v.x, u.y + v.y, u.z + v.z };
+}
 Vec3D operator - (const Vec3D & u, const Vec3D & v) {
 	return { u.x - v.x, u.y - v.y, u.z - v.z };
 }
@@ -36,9 +39,13 @@ float operator * (const Vec3D & u, const Vec3D & v) {
 	return (u.x * v.x) + (u.y * v.y) + (u.z * v.z);
 }
 
-Vec3D operator / (const Vec3D & u, float f) {
-	return { u.x / f, u.y / f, u.z / f };
+Vec3D operator * (const Vec3D & u, float f) {
+	return { u.x * f, u.y * f, u.z * f };
 }
+Vec3D operator * (float f, const Vec3D & u) {
+	return { u.x * f, u.y * f, u.z * f };
+}
+Vec3D operator / (const Vec3D & u, float f) { return u * (1.0f / f); }
 
 struct Mat3D {
 	Vec3D row[3];
