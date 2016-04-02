@@ -240,12 +240,20 @@ Model m;
 void load() {
 	m = Model::OBJ("D:\\Documents\\Development\\workspace\\sw_renderer\\assets\\floor.obj");
 	m = Model::OBJ("D:\\Documents\\Development\\workspace\\sw_renderer\\assets\\african_head\\african_head.obj");
+	Mat3D t = Mat3D::Id();
+	t.row[1].y = -1.0f;
+	for (auto & v : m.vertices) {
+		v = t * v;
+	}
 }
 
 int t = 1;
 float rcz = 0.0f;
 float rlz = 0.0f;
+float roy = 0.0f;
 void update(Frame & pixels) {
+	if (Key::isDown(SDL_SCANCODE_LEFT))  roy -= 0.1f;
+	if (Key::isDown(SDL_SCANCODE_RIGHT)) roy += 0.1f;
 	if (Key::isDown(SDL_SCANCODE_A)) rcz -= 0.1f;
 	if (Key::isDown(SDL_SCANCODE_D)) rcz += 0.1f;
 	if (Key::isDown(SDL_SCANCODE_J)) rlz -= 0.1f;
@@ -309,19 +317,26 @@ void update(Frame & pixels) {
 		r.wireframe({10+d, 140}, {30+d, 50}, {60+d, 160}, black);
 	}
 
+	Mat3D rot = { Vec3D { cos(roy), 0.0f, sin(roy) },
+	              Vec3D {     0.0f, 1.0f,     0.0f },
+				  Vec3D {-sin(roy), 0.0f, cos(roy) } };
+
 	auto camera = Vec3D { cos(rcz), 0.0f, sin(rcz) }.normalized();
 	Vec3D light = Vec3D { cos(rlz), 1.0f, sin(rlz) }.normalized();
 	for (auto t : m.faces) {
 		Vec3D v3[3];
 		Vec2D v2[3];
 		for (int i = 0; i < 3; ++i) {
-			v3[i] = m.vertices[t.vertices[i]];
+			v3[i] = rot * m.vertices[t.vertices[i]];
 			v2[i].x = int(ZOOM * v3[i].x) + WIDTH / 2;
-			v2[i].y = int(-ZOOM * v3[i].y) + HEIGHT / 2;
+			v2[i].y = int(ZOOM * v3[i].y) + HEIGHT / 2;
 		}
 
-		const float c = clamp(light * m.normal(t).normalized(), 0.0f, 1.0f);
-		if ((camera * m.normal(t).normalized()) >= 0.0f) {
+		Vec3D n;
+		n = rot * m.normal(t).normalized();
+
+		const float c = clamp(light * n, 0.0f, 1.0f);
+		if ((camera * n) >= 0.0f) {
 			r.triangle(v2[0], v2[1], v2[2], RGB(c, c, c));
 		}
 	}
@@ -330,12 +345,12 @@ void update(Frame & pixels) {
 			Vec3D v3[3];
 			Vec2D v2[3];
 			for (int i = 0; i < 3; ++i) {
-				v3[i] = m.vertices[t.vertices[i]];
+				v3[i] = rot * m.vertices[t.vertices[i]];
 				v2[i].x = int(ZOOM * v3[i].x) + WIDTH / 2;
-				v2[i].y = int(-ZOOM * v3[i].y) + HEIGHT / 2;
+				v2[i].y = int(ZOOM * v3[i].y) + HEIGHT / 2;
 			}
 
-			if ((camera * m.normal(t).normalized()) >= 0.0f) {
+			if ((camera * (rot * m.normal(t).normalized())) >= 0.0f) {
 				r.wireframe(v2[0], v2[1], v2[2], black);
 			}
 		}

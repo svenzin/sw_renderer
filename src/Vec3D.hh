@@ -39,3 +39,13 @@ float operator * (const Vec3D & u, const Vec3D & v) {
 Vec3D operator / (const Vec3D & u, float f) {
 	return { u.x / f, u.y / f, u.z / f };
 }
+
+struct Mat3D {
+	Vec3D row[3];
+
+	static Mat3D Id() { return { Vec3D { 1.0f, 0.0f, 0.0f }, Vec3D { 0.0f, 1.0f, 0.0f }, Vec3D { 0.0f, 0.0f, 1.0f } }; }
+};
+
+Vec3D operator * (const Mat3D & m, const Vec3D & v) {
+	return { m.row[0] * v, m.row[1] * v, m.row[2] * v };
+}
