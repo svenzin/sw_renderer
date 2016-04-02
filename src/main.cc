@@ -1,4 +1,8 @@
 #include <iostream>
+#include <cstring>
+#include <vector>
+#include <deque>
+
 #include <SDL2/SDL.h>
 
 #include <Vec2D.hh>
@@ -23,18 +27,20 @@ Uint32 RGB(float r, float g, float b) {
 	return RGB(Uint8(255*r), Uint8(255*g), Uint8(255*b));
 }
 
-#include <vector>
 struct Frame {
 	explicit Frame(int w, int h)
 	: _width(w),
 	  _height(h),
-	  _data(w*h, RGB(0.0f, 0.0f, 0.0f))
+	  _data(w*h),
+	  _z(w*h)
 	{}
 	virtual ~Frame() {}
 	const int _width;
 	const int _height;
 	std::vector<Uint32> _data;
+	std::vector<float> _z;
 	Uint32 _dummy;
+	float _dummyz;
 	Uint32 & at(int x, int y) {
 		if ((x >= 0) && (x < _width)) {
 			if ((y >= 0) && (y < _height)) {
@@ -43,15 +49,23 @@ struct Frame {
 		}
 		return _dummy;//_data.at(-1);
 	}
+	float & z(int x, int y) {
+		if ((x >= 0) && (x < _width)) {
+			if ((y >= 0) && (y < _height)) {
+				return _z[_width * y + x];
+			}
+		}
+		return _dummyz;//_data.at(-1);
+	}
 };
 
 void load();
 void update(Frame & pixels);
 
 const int FPS = 33;
-const int WIDTH = 320 * 1;
-const int HEIGHT = 180 * 1;
-const int SCALE = 4;
+const int WIDTH = 320 * 2;
+const int HEIGHT = 180 * 2;
+const int SCALE = 2;
 const float ZOOM = 0.5f * HEIGHT;
 
 class Key {
@@ -189,7 +203,25 @@ struct Rasterizer {
 		line(w, u, color);
 	}
 
-	void triangle(Vec2D u, Vec2D v, Vec2D w, Uint32 color) {
+	void hline(Vec3D u, Vec3D v, Uint32 color) {
+		if (v.x < u.x) std::swap(u, v);
+		float y = int(u.y);
+		float dz = (u.x == v.x) ? 0.0f : (v.z - u.z) / (v.x - u.x);
+
+		float zmin = u.z, zmax = v.z;
+		if (zmin > zmax) std::swap(zmin, zmax);
+		for (int x = int(u.x); x <= int(v.x); ++x) {
+//			float z = u.z + (x - u.x) * dz;
+			float z = u.z + (clamp(x, u.x, v.x) - u.x) * dz, zmin, zmax;
+			if (z > pixels.z(x, y)) {
+				pixels.z(x, y) = z;
+				pixels.at(x, y) = color;
+//				Uint8 _ = Uint8(clamp(z + 128.0f, 10.0f, 250.0f));
+//				pixels.at(x, y) = RGB(_, _, _);
+			}
+		}
+	}
+	void triangle(Vec3D u, Vec3D v, Vec3D w, Uint32 color) {
 		if (u.y > v.y) std::swap(u, v);
 		if (u.y > w.y) std::swap(u, w);
 		if (v.y > w.y) std::swap(v, w);
@@ -199,38 +231,37 @@ struct Rasterizer {
 		const int wy = int(w.y);
 
 		if (uy == vy) {
-			const int xmin = std::min(int(u.x), int(v.x));
-			const int xmax = std::max(int(u.x), int(v.x));
-			for (int x = xmin; x <= xmax; ++x) {
-				pixels.at(x, uy) = color;
-			}
+			hline(u, v, color);
 		} else {
 			const float duv = (v.x - u.x) / (v.y - u.y);
 			const float duw = (w.x - u.x) / (w.y - u.y);
+			const float zuv = (v.z - u.z) / (v.y - u.y);
+			const float zuw = (w.z - u.z) / (w.y - u.y);
 			for (int y = uy; y < vy; ++y) {
-				const int xv = int(u.x + (y - u.y) * duv);
-				const int xw = int(u.x + (y - u.y) * duw);
-				for (int x = std::min(xv, xw); x <= std::max(xv, xw); ++x) {
-					pixels.at(x, y) = color;
-				}
+				const float yy = clamp(y, u.y, v.y);
+				const float xv = u.x + (yy - u.y) * duv;
+				const float xw = u.x + (yy - u.y) * duw;
+				const float zv = u.z + (yy - u.y) * zuv;
+				const float zw = u.z + (yy - u.y) * zuw;
+				hline({ xv, y, zv }, { xw, y, zw }, color);
 			}
 		}
 
 		if (vy == wy) {
-			const int xmin = std::min(int(v.x), int(w.x));
-			const int xmax = std::max(int(v.x), int(w.x));
-			for (int x = xmin; x <= xmax; ++x) {
-				pixels.at(x, vy) = color;
-			}
+			hline(v, w, color);
 		} else {
 			const float duw = (w.x - u.x) / (w.y - u.y);
 			const float dvw = (w.x - v.x) / (w.y - v.y);
+			const float zuw = (w.z - u.z) / (w.y - u.y);
+			const float zvw = (w.z - v.z) / (w.y - v.y);
 			for (int y = vy; y <= wy; ++y) {
-				const int xv = int(v.x + (y - v.y) * dvw);
-				const int xw = int(u.x + (y - u.y) * duw);
-				for (int x = std::min(xv, xw); x <= std::max(xv, xw); ++x) {
-					pixels.at(x, y) = color;
-				}
+				const float yu = clamp(y, u.y, w.y);
+				const float yv = clamp(y, v.y, w.y);
+				const float xv = v.x + (yv - v.y) * dvw;
+				const float xw = u.x + (yu - u.y) * duw;
+				const float zv = v.z + (yv - v.y) * zvw;
+				const float zw = u.z + (yu - u.y) * zuw;
+				hline({ xv, y, zv }, { xw, y, zw }, color);
 			}
 		}
 	}
@@ -276,6 +307,7 @@ void update(Frame & pixels) {
 		t += FPS;
 	}
 
+	std::fill_n(pixels._z.begin(), pixels._z.size(), -1e20f);
 	Rasterizer r { pixels };
 	Uint32 white = RGB(1.0f, 1.0f, 1.0f);
 	Uint32 black = RGB(0.0f, 0.0f, 0.0f);
@@ -312,7 +344,7 @@ void update(Frame & pixels) {
 	r.wireframe({200+d, 50}, {280+d, 20}, {250+d, 150}, white);
 	r.wireframe({200, 100+d}, {200, 100+d}, {200, 100+d}, white);
 
-	r.triangle({10+d, 140}, {30+d, 50}, {60+d, 160}, white);
+	r.triangle({10+d, 140, 10}, {30+d, 50, 50}, {60+d, 160, 200}, white);
 	if ((t/FPS)%2) {
 		r.wireframe({10+d, 140}, {30+d, 50}, {60+d, 160}, black);
 	}
@@ -328,8 +360,9 @@ void update(Frame & pixels) {
 		Vec2D v2[3];
 		for (int i = 0; i < 3; ++i) {
 			v3[i] = rot * m.vertices[t.vertices[i]];
-			v2[i].x = int(ZOOM * v3[i].x) + WIDTH / 2;
-			v2[i].y = int(ZOOM * v3[i].y) + HEIGHT / 2;
+			v3[i].x = ZOOM * v3[i].x + 0.5f * WIDTH;
+			v3[i].y = ZOOM * v3[i].y + 0.5f * HEIGHT;
+			v3[i].z = ZOOM * v3[i].z;
 		}
 
 		Vec3D n;
@@ -337,7 +370,7 @@ void update(Frame & pixels) {
 
 		const float c = clamp(light * n, 0.0f, 1.0f);
 		if ((camera * n) >= 0.0f) {
-			r.triangle(v2[0], v2[1], v2[2], RGB(c, c, c));
+			r.triangle(v3[0], v3[1], v3[2], RGB(c, c, c));
 		}
 	}
 	if ((t/FPS)%2) {
