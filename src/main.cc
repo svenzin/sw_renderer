@@ -248,16 +248,16 @@ void load() {
 }
 
 int t = 1;
-float rcz = 0.0f;
+float rcz = -3.14159f / 2;
 float rlz = 0.0f;
 float roy = 0.0f;
 void update(Frame & pixels) {
 	if (Key::isDown(SDL_SCANCODE_LEFT))  roy -= 0.1f;
 	if (Key::isDown(SDL_SCANCODE_RIGHT)) roy += 0.1f;
-	if (Key::isDown(SDL_SCANCODE_A)) rcz -= 0.1f;
-	if (Key::isDown(SDL_SCANCODE_D)) rcz += 0.1f;
-	if (Key::isDown(SDL_SCANCODE_J)) rlz -= 0.1f;
-	if (Key::isDown(SDL_SCANCODE_L)) rlz += 0.1f;
+	if (Key::isDown(SDL_SCANCODE_A)) rcz += 0.1f;
+	if (Key::isDown(SDL_SCANCODE_D)) rcz -= 0.1f;
+	if (Key::isDown(SDL_SCANCODE_J)) rlz += 0.1f;
+	if (Key::isDown(SDL_SCANCODE_L)) rlz -= 0.1f;
 
 	const int w = pixels._width;
 	const int h = pixels._height;
